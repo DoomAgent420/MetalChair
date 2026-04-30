@@ -3,72 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Search Frontend</title>
+  <title>Search</title>
   <style>
-    :root{
-      --bg:#1f1f1f;      /* dark gray page background */
-      --panel:#2b2b2b;   /* slightly lighter panel */
-      --text:#ffffff;    /* white text */
-      --accent:#0000ff;  /* blue accent */
-      --muted:#bdbdbd;
-      --radius:8px;
-      --gap:12px;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}
-    .wrap{max-width:820px;margin:36px auto;padding:20px;background:linear-gradient(180deg,var(--panel),#232323);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.6)}
-    h1{margin:0 0 12px 0;font-size:20px;font-weight:600}
-    .controls{display:flex;gap:var(--gap);align-items:center;margin-bottom:14px}
-    input[type="search"]{
-      flex:1;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.08);
-      background:#fff;color:#000;font-size:14px;outline:none;
-      box-shadow:inset 0 1px 0 rgba(0,0,0,.06);
-    }
-    button{
-      background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:8px;
-      cursor:pointer;font-weight:600;font-size:14px;
-      box-shadow:0 4px 10px rgba(0,0,0,.35);
-    }
-    button:active{transform:translateY(1px)}
-    #status{color:var(--muted);font-size:13px;margin-bottom:8px}
-    pre#out{
-      margin:0;padding:12px;border-radius:8px;background:#111;color:var(--text);
-      max-height:360px;overflow:auto;font-size:13px;line-height:1.35;
-      border:1px solid rgba(255,255,255,.04);
-    }
-    footer{margin-top:12px;color:var(--muted);font-size:12px}
-    a.link{color:var(--accent);text-decoration:none}
+    :root{--bg:#1f1f1f;--panel:#2b2b2b;--text:#fff;--accent:#0000ff}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Arial}
+    .wrap{max-width:720px;margin:28px auto;padding:16px;background:var(--panel);border-radius:8px}
+    input{width:calc(100% - 96px);padding:8px;border-radius:6px;border:0;margin-right:8px}
+    button{width:80px;padding:8px;border-radius:6px;border:0;background:var(--accent);color:#fff}
+    #status{color:#bdbdbd;font-size:13px;margin:8px 0}
+    pre{background:#0b0b0b;padding:10px;border-radius:6px;max-height:360px;overflow:auto;color:var(--text)}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Search Frontend</h1>
-
-    <div class="controls">
-      <input id="q" type="search" placeholder="Enter query" aria-label="Search" />
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="q" type="search" placeholder="Enter query" />
       <button id="go">Search</button>
     </div>
-
     <div id="status">status: idle</div>
-    <pre id="out">Loader starting…</pre>
-
-    <footer>
-      Minimal UI • <a class="link" href="#" onclick="document.getElementById('out').textContent='';return false">clear</a>
-    </footer>
+    <pre id="out">loader starting…</pre>
   </div>
 
-  <!-- keep your loader as backup -->
   <script type="module" src="./pull.js"></script>
 
   <script type="module">
-    const out = s => {
-      const e = document.getElementById('out');
-      e.textContent = (e.textContent ? e.textContent + '\n' : '') + s;
-      console.log(s);
-    };
-    const setStatus = s => { document.getElementById('status').textContent = 'status: ' + s; };
-
     const WORKER_SEARCH = 'https://broad-meadow-a6f7.chrisjlove2022.workers.dev/search';
+    const out = s => { const e = document.getElementById('out'); e.textContent += (e.textContent?'\n':'') + s; console.log(s); };
+    const setStatus = s => document.getElementById('status').textContent = 'status: ' + s;
 
     document.getElementById('go').addEventListener('click', async () => {
       const q = document.getElementById('q').value.trim();
@@ -87,15 +48,9 @@
         const data = await r.json();
         out('Worker returned: ' + JSON.stringify(data).slice(0,1000));
         if (window.__MODULE_LOADED__ && window.AppModule && typeof window.AppModule.process === 'function') {
-          try {
-            const processed = window.AppModule.process(data);
-            out('Processed -> ' + JSON.stringify(processed).slice(0,1000));
-          } catch (e) {
-            out('Module processing error: ' + e);
-          }
-        } else {
-          out('Module not loaded; rendering raw Worker data');
-        }
+          try { out('Processed -> ' + JSON.stringify(window.AppModule.process(data)).slice(0,1000)); }
+          catch(e){ out('Module processing error: ' + e); }
+        } else out('Module not loaded; rendering raw Worker data');
         setStatus('idle');
       } catch (err) {
         out('Worker call failed: ' + err);
@@ -103,10 +58,7 @@
       }
     });
 
-    // small UX: press Enter to search
-    document.getElementById('q').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('go').click();
-    });
+    document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
   </script>
 </body>
 </html>
