@@ -1,64 +1,49 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Search</title>
-  <style>
-    :root{--bg:#1f1f1f;--panel:#2b2b2b;--text:#fff;--accent:#0000ff}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Arial}
-    .wrap{max-width:720px;margin:28px auto;padding:16px;background:var(--panel);border-radius:8px}
-    input{width:calc(100% - 96px);padding:8px;border-radius:6px;border:0;margin-right:8px}
-    button{width:80px;padding:8px;border-radius:6px;border:0;background:var(--accent);color:#fff}
-    #status{color:#bdbdbd;font-size:13px;margin:8px 0}
-    pre{background:#0b0b0b;padding:10px;border-radius:6px;max-height:360px;overflow:auto;color:var(--text)}
-  </style>
+<meta charset="utf-8">
+<title>New Tab</title>
+<style>
+  body {
+    background:#000;
+    color:#0f0;
+    font-family:Consolas, monospace;
+    padding:20px;
+  }
+  #cmd {
+    background:#000;
+    color:#0f0;
+    border:0;
+    outline:none;
+    width:90%;
+    font-size:16px;
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div style="display:flex;gap:8px;align-items:center">
-      <input id="q" type="search" placeholder="Enter query" />
-      <button id="go">Search</button>
-    </div>
-    <div id="status">status: idle</div>
-    <pre id="out">loader starting…</pre>
-  </div>
+  <div>> <input id="cmd" autofocus placeholder="enter url or search" /></div>
+  <script>
+    const WORKER = "https://broad-meadow-a6f7.chrisjlove2022.workers.dev/?q=";
 
-  <script type="module" src="./pull.js"></script>
+    document.getElementById("cmd").addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
 
-  <script type="module">
-    const WORKER_SEARCH = 'https://broad-meadow-a6f7.chrisjlove2022.workers.dev/search';
-    const out = s => { const e = document.getElementById('out'); e.textContent += (e.textContent?'\n':'') + s; console.log(s); };
-    const setStatus = s => document.getElementById('status').textContent = 'status: ' + s;
+      let q = e.target.value.trim();
+      if (!q) return;
 
-    document.getElementById('go').addEventListener('click', async () => {
-      const q = document.getElementById('q').value.trim();
-      if (!q) { out('Enter a query'); return; }
-      setStatus('sending');
-      out('Query -> ' + q);
-      try {
-        const r = await fetch(WORKER_SEARCH, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q }),
-          mode: 'cors',
-          cache: 'no-store'
-        });
-        if (!r.ok) throw new Error('status ' + r.status);
-        const data = await r.json();
-        out('Worker returned: ' + JSON.stringify(data).slice(0,1000));
-        if (window.__MODULE_LOADED__ && window.AppModule && typeof window.AppModule.process === 'function') {
-          try { out('Processed -> ' + JSON.stringify(window.AppModule.process(data)).slice(0,1000)); }
-          catch(e){ out('Module processing error: ' + e); }
-        } else out('Module not loaded; rendering raw Worker data');
-        setStatus('idle');
-      } catch (err) {
-        out('Worker call failed: ' + err);
-        setStatus('error');
+      // If user types "google.com", add https://
+      if (!/^https?:\/\//i.test(q)) {
+        if (/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(q)) {
+          q = "https://" + q;
+        } else {
+          // treat as search
+          q = "https://www.google.com/search?q=" + encodeURIComponent(q);
+        }
       }
-    });
 
-    document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
+      // Redirect into Worker proxy
+      location.href = WORKER + encodeURIComponent(q);
+    });
   </script>
 </body>
 </html>
